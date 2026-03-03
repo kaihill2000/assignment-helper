@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assignment Helper - Web App</title>
+    <link rel="stylesheet" href="app-styles.css">
+    <link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Installation Card -->
+        <div id="installCard" class="install-card">
+            <div class="install-header">
+                <h2>📌 Install This App</h2>
+                <p>Add AI Assignment Helper to your device for quick access</p>
+            </div>
+            <div class="install-buttons">
+                <button id="installBtn" class="install-btn">⬇️ Install App</button>
+                <button id="skipBtn" class="skip-btn">Skip for Now</button>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div class="app-wrapper">
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h1>📚 AI Assignment Helper</h1>
+                    <button id="menuBtn" class="menu-btn">☰</button>
+                </div>
+                
+                <div class="sidebar-content">
+                    <div class="nav-section">
+                        <h3>Assignment Types</h3>
+                        <button class="nav-item active" data-type="question">❓ Question</button>
+                        <button class="nav-item" data-type="essay">✍️ Essay</button>
+                        <button class="nav-item" data-type="math">🔢 Math</button>
+                        <button class="nav-item" data-type="reading">📖 Reading</button>
+                        <button class="nav-item" data-type="code">💻 Code</button>
+                    </div>
+
+                    <div class="info-section">
+                        <h4>💡 Tips</h4>
+                        <ul>
+                            <li>Paste your assignment</li>
+                            <li>Select the type</li>
+                            <li>Click "Get Help"</li>
+                            <li>Copy the response</li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-section">
+                        <button id="clearBtn" class="clear-btn">🗑️ Clear All</button>
+                        <button id="darkModeBtn" class="dark-mode-btn">🌙 Dark Mode</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div class="input-area">
+                    <h2>Paste Your Assignment</h2>
+                    <textarea id="assignmentInput" placeholder="Paste your assignment question, essay prompt, math problem, or code here..."></textarea>
+                    
+                    <div class="assignment-options">
+                        <label>
+                            <input type="radio" name="assignmentType" value="question" checked>
+                            Multiple Choice / Question
+                        </label>
+                        <label>
+                            <input type="radio" name="assignmentType" value="essay">
+                            Essay / Writing
+                        </label>
+                        <label>
+                            <input type="radio" name="assignmentType" value="math">
+                            Math Problem
+                        </label>
+                        <label>
+                            <input type="radio" name="assignmentType" value="reading">
+                            Reading Comprehension
+                        </label>
+                        <label>
+                            <input type="radio" name="assignmentType" value="code">
+                            Code Completion
+                        </label>
+                    </div>
+
+                    <button id="getHelpBtn" class="get-help-btn">🤖 Get Help</button>
+                </div>
+
+                <div class="response-area">
+                    <div class="response-header">
+                        <h2>Response</h2>
+                        <div class="response-actions">
+                            <button id="copyBtn" class="action-btn" style="display: none;">📋 Copy</button>
+                            <button id="shareBtn" class="action-btn" style="display: none;">📤 Share</button>
+                        </div>
+                    </div>
+                    
+                    <div id="responseOutput" class="response-output">
+                        <p class="placeholder">Your response will appear here...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
