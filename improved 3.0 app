@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assignment Helper</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        body.dark { background: #1a1a1a; }
+        
+        .btn-float { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #667eea; border: none; border-radius: 50%; cursor: pointer; font-size: 28px; z-index: 999; }
+        .btn-float:hover { transform: scale(1.1); }
+        
+        .panel { position: fixed; right: -400px; top: 0; width: 400px; height: 100vh; background: white; transition: right 0.3s; z-index: 1000; overflow-y: auto; }
+        .panel.open { right: 0; }
+        .panel.dark { background: #2c2c2c; color: white; }
+        
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; display: flex; justify-content: space-between; }
+        .close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        
+        .content { padding: 20px; }
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 10px; background: none; border: none; cursor: pointer; font-weight: bold; color: #999; }
+        .tab.active { color: #667eea; border-bottom: 3px solid #667eea; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .input { width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #ddd; border-radius: 5px; font-family: Arial; }
+        .panel.dark .input { background: #3c3c3c; color: white; border-color: #555; }
+        
+        .btn { width: 100%; padding: 10px; margin: 10px 0; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-secondary { background: #ddd; color: black; }
+        
+        .item { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #667eea; }
+        .panel.dark .item { background: #3c3c3c; }
+        
+        .item-actions { display: flex; gap: 5px; margin-top: 10px; }
+        .item-actions button { flex: 1; padding: 5px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; }
+        .btn-done { background: #27ae60; color: white; }
+        .btn-del { background: #e74c3c; color: white; }
+        
+        .response { background: #f0f7ff; padding: 15px; margin-top: 15px; border-radius: 5px; display: none; }
+        .panel.dark .response { background: #3c3c3c; }
+        
+        .mode-btn { position: fixed; top: 20px; right: 20px; background: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; z-index: 998; }
+        .mode-btn.dark { background: #2c2c2c; color: white; }
+        
+        .main { max-width: 1200px; margin: 0 auto; padding: 40px 20px; text-align: center; color: white; }
+        .hero h1 { font-size: 48px; margin-bottom: 20px; }
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-top: 50px; }
+        .card { background: white; padding: 30px; border-radius: 10px; color: #2c3e50; }
+        body.dark .card { background: #2c2c2c; color: white; }
+    </style>
+</head>
+<body>
+    <button class="mode-btn" onclick="toggleDark()">🌙 Dark</button>
+    <button class="btn-float" onclick="togglePanel()">💬</button>
+    
+    <div class="panel" id="panel">
+        <div class="header">
+            <h2>AI Helper</h2>
+            <button class="close" onclick="togglePanel()">✕</button>
+        </div>
+        
+        <div class="content">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab(0)">Assignments</button>
+                <button class="tab" onclick="switchTab(1)">Help</button>
+                <button class="tab" onclick="switchTab(2)">Tasks</button>
+            </div>
+            
+            <div class="tab-content active" id="tab0">
+                <h3>📝 Assignments</h3>
+                <div id="assignList"></div>
+                <button class="btn btn-primary" onclick="showAssignForm()">+ Add</button>
+                <div id="assignForm" style="display:none; margin-top:15px;">
+                    <input type="text" id="assignName" class="input" placeholder="Name">
+                    <input type="date" id="assignDate" class="input">
+                    <button class="btn btn-primary" onclick="addAssign()">Save</button>
+                    <button class="btn btn-secondary" onclick="hideAssignForm()">Cancel</button>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="tab1">
+                <h3>🤖 Get Help</h3>
+                <textarea id="question" class="input" style="height:100px;" placeholder="Ask anything..."></textarea>
+                <button class="btn btn-primary" onclick="getAnswer()">Get Answer</button>
+                <div id="answerBox" class="response">
+                    <h4>Answer:</h4>
+                    <p id="answer"></p>
+                    <button class="btn btn-secondary" onclick="copyAnswer()" style="margin-top:10px;">Copy</button>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="tab2">
+                <h3>📋 Tasks</h3>
+                <div id="taskList"></div>
+                <button class="btn btn-primary" onclick="showTaskForm()">+ Add</button>
+                <div id="taskForm" style="display:none; margin-top:15px;">
+                    <input type="text" id="taskName" class="input" placeholder="Task name">
+                    <select id="taskPriority" class="input">
+                        <option>Low</option>
+                        <option selected>Medium</option>
+                        <option>High</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="addTask()">Save</button>
+                    <button class="btn btn-secondary" onclick="hideTaskForm()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main">
+        <div class="hero">
+            <h1>🎓 AI Assignment Helper</h1>
+            <p>Your AI assistant for assignments</p>
+            <button class="btn btn-primary" style="width:200px; margin-top:20px;" onclick="togglePanel()">Open Panel</button>
+        </div>
+        
+        <div class="features">
+            <div class="card"><h3>📝 Assignments</h3><p>Track your work</p></div>
+            <div class="card"><h3>🤖 AI Help</h3><p>Get real answers</p></div>
+            <div class="card"><h3>📋 Tasks</h3><p>Manage tasks</p></div>
+            <div class="card"><h3>🌙 Dark Mode</h3><p>Easy on eyes</p></div>
+        </div>
+    </div>
+    
+    <script>
+        let data = { assigns: [], tasks: [] };
+        
+        function load() {
+            try { data = JSON.parse(localStorage.getItem('data')) || data; } catch(e) {}
+            updateAssigns();
+            updateTasks();
+        }
+        
+        function save() { localStorage.setItem('data', JSON.stringify(data)); }
+        
+        function togglePanel() {
+            document.getElementById('panel').classList.toggle('open');
+        }
+        
+        function switchTab(n) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+            document.getElementById('tab' + n).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function showAssignForm() { document.getElementById('assignForm').style.display = 'block'; }
+        function hideAssignForm() { document.getElementById('assignForm').style.display = 'none'; }
+        
+        function addAssign() {
+            const name = document.getElementById('assignName').value;
+            const date = document.getElementById('assignDate').value;
+            if (name && date) {
+                data.assigns.push({ id: Date.now(), name, date, done: false });
+                save();
+                updateAssigns();
+                document.getElementById('assignName').value = '';
+                document.getElementById('assignDate').value = '';
+                hideAssignForm();
+            }
+        }
+        
+        function updateAssigns() {
+            const list = document.getElementById('assignList');
+            list.innerHTML = '';
+            data.assigns.forEach(a => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.innerHTML = `<h4>${a.name}</h4><p>Due: ${new Date(a.date).toLocaleDateString()}</p><div class="item-actions"><button class="btn-done" onclick="toggleAssign(${a.id})">${a.done ? '✓' : 'Done'}</button><button class="btn-del" onclick="delAssign(${a.id})">Delete</button></div>`;
+                list.appendChild(div);
+            });
+        }
+        
+        function toggleAssign(id) {
+            const a = data.assigns.find(x => x.id === id);
+            if (a) { a.done = !a.done; save(); updateAssigns(); }
+        }
+        
+        function delAssign(id) {
+            data.assigns = data.assigns.filter(a => a.id !== id);
+            save();
+            updateAssigns();
+        }
+        
+        function showTaskForm() { document.getElementById('taskForm').style.display = 'block'; }
+        function hideTaskForm() { document.getElementById('taskForm').style.display = 'none'; }
+        
+        function addTask() {
+            const name = document.getElementById('taskName').value;
+            const priority = document.getElementById('taskPriority').value;
+            if (name) {
+                data.tasks.push({ id: Date.now(), name, priority, done: false });
+                save();
+                updateTasks();
+                document.getElementById('taskName').value = '';
+                hideTaskForm();
+            }
+        }
+        
+        function updateTasks() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+            data.tasks.forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                const emoji = t.priority === 'High' ? '🔴' : t.priority === 'Medium' ? '🟡' : '🟢';
+                div.innerHTML = `<h4>${emoji} ${t.name}</h4><p>${t.priority}</p><div class="item-actions"><button class="btn-done" onclick="toggleTask(${t.id})">${t.done ? '✓' : 'Done'}</button><button class="btn-del" onclick="delTask(${t.id})">Delete</button></div>`;
+                list.appendChild(div);
+            });
+        }
+        
+        function toggleTask(id) {
+            const t = data.tasks.find(x => x.id === id);
+            if (t) { t.done = !t.done; save(); updateTasks(); }
+        }
+        
+        function delTask(id) {
+            data.tasks = data.tasks.filter(t => t.id !== id);
+            save();
+            updateTasks();
+        }
+        
+        function getAnswer() {
+            const q = document.getElementById('question').value.toLowerCase();
+            if (!q) { alert('Ask a question!'); return; }
+            
+            let ans = '';
+            if (q.includes('1+1')) ans = '1 + 1 = 2';
+            else if (q.includes('2+2')) ans = '2 + 2 = 4';
+            else if (q.includes('photosynthesis')) ans = 'Photosynthesis is how plants make food using sunlight, water, and CO2.';
+            else if (q.includes('dna')) ans = 'DNA is a molecule that carries genetic information for all living things.';
+            else if (q.includes('gravity')) ans = 'Gravity is a force that pulls objects toward each other.';
+            else if (q.includes('capital of france')) ans = 'The capital of France is Paris.';
+            else if (q.includes('capital of japan')) ans = 'The capital of Japan is Tokyo.';
+            else if (q.includes('world war')) ans = 'World War 2 (1939-1945) was a global conflict involving most nations.';
+            else ans = 'I can help with: math (1+1), science (photosynthesis, DNA), geography (capitals), history, and more. Try asking a specific question!';
+            
+            document.getElementById('answer').textContent = ans;
+            document.getElementById('answerBox').style.display = 'block';
+        }
+        
+        function copyAnswer() {
+            const text = document.getElementById('answer').textContent;
+            navigator.clipboard.writeText(text).then(() => alert('Copied!'));
+        }
+        
+        function toggleDark() {
+            document.body.classList.toggle('dark');
+            document.getElementById('panel').classList.toggle('dark');
+            document.querySelector('.mode-btn').classList.toggle('dark');
+            localStorage.setItem('dark', document.body.classList.contains('dark'));
+        }
+        
+        if (localStorage.getItem('dark')) {
+            document.body.classList.add('dark');
+            document.getElementById('panel').classList.add('dark');
+            document.querySelector('.mode-btn').classList.add('dark');
+        }
+        
+        load();
+    </script>
+</body>
+</html>
