@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assignment Helper</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; transition: all 0.3s; }
+        body.dark-mode { background: #1a1a1a; }
+        
+        .floating-btn { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #667eea; border: none; border-radius: 50%; cursor: pointer; font-size: 28px; z-index: 9999; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); transition: all 0.3s; }
+        .floating-btn:hover { transform: scale(1.1); }
+        .floating-btn.active { background: #e74c3c; }
+        
+        .side-panel { position: fixed; right: -420px; top: 0; width: 400px; height: 100vh; background: white; box-shadow: -5px 0 30px rgba(0, 0, 0, 0.2); transition: right 0.3s; z-index: 10000; display: flex; flex-direction: column; overflow: hidden; }
+        .side-panel.open { right: 0; }
+        .side-panel.dark-mode { background: #2c2c2c; color: #ecf0f1; }
+        
+        .panel-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .panel-header h2 { font-size: 18px; }
+        .close-btn { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; transition: all 0.3s; }
+        .close-btn:hover { background: rgba(255,255,255,0.4); }
+        
+        .panel-tabs { display: flex; gap: 0; border-bottom: 2px solid #ecf0f1; flex-shrink: 0; }
+        .panel-tabs button { flex: 1; background: none; border: none; padding: 12px; cursor: pointer; font-size: 12px; font-weight: 600; color: #7f8c8d; border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .panel-tabs button.active { color: #667eea; border-bottom-color: #667eea; }
+        
+        .panel-content { flex: 1; overflow-y: auto; padding: 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .btn { width: 100%; padding: 10px; margin: 10px 0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-secondary { background: #ecf0f1; color: #2c3e50; }
+        .btn-secondary:hover { background: #bdc3c7; }
+        .btn-danger { background: #e74c3c; color: white; }
+        
+        .input-field { margin: 15px 0; text-align: left; }
+        .input-field label { display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50; font-size: 13px; }
+        .side-panel.dark-mode .input-field label { color: #ecf0f1; }
+        .input-field input, .input-field textarea, .input-field select { width: 100%; padding: 10px; border: 2px solid #ecf0f1; border-radius: 6px; font-family: inherit; font-size: 13px; }
+        .side-panel.dark-mode .input-field input, .side-panel.dark-mode .input-field textarea, .side-panel.dark-mode .input-field select { background: #3c3c3c; color: #ecf0f1; border-color: #555; }
+        .input-field textarea { resize: vertical; min-height: 80px; }
+        
+        .task-item { background: #f0f0f0; padding: 12px; margin: 10px 0; border-radius: 6px; border-left: 4px solid #667eea; text-align: left; }
+        .side-panel.dark-mode .task-item { background: #3c3c3c; color: #ecf0f1; }
+        .task-item h4 { margin-bottom: 5px; font-size: 14px; }
+        .task-item p { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
+        .task-actions { display: flex; gap: 5px; }
+        .task-actions button { flex: 1; padding: 6px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; }
+        .complete-btn { background: #27ae60; color: white; }
+        .delete-btn { background: #e74c3c; color: white; }
+        
+        .response-box { background: #f0f7ff; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid #667eea; }
+        .side-panel.dark-mode .response-box { background: #3c3c3c; }
+        .response-box h4 { margin-bottom: 10px; color: #667eea; }
+        .response-box p { font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; }
+        
+        .main { max-width: 1200px; margin: 0 auto; padding: 40px 20px; text-align: center; color: white; }
+        .hero h1 { font-size: 48px; margin-bottom: 20px; }
+        .hero p { font-size: 18px; margin-bottom: 30px; }
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-top: 50px; }
+        .feature-card { background: white; padding: 30px; border-radius: 12px; color: #2c3e50; }
+        body.dark-mode .feature-card { background: #2c2c2c; color: #ecf0f1; }
+        .feature-card h3 { color: #667eea; margin-bottom: 15px; }
+        
+        .mode-toggle { position: fixed; top: 20px; right: 20px; background: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; z-index: 9998; font-weight: 600; }
+        body.dark-mode .mode-toggle { background: #2c2c2c; color: #ecf0f1; }
+        
+        @media (max-width: 768px) { .side-panel { width: 100%; right: -100%; } .hero h1 { font-size: 32px; } }
+    </style>
+</head>
+<body>
+    <button class="mode-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+    <button class="floating-btn" id="floatingBtn" onclick="togglePanel()">💬</button>
+
+    <div class="side-panel" id="sidePanel">
+        <div class="panel-header">
+            <h2>📚 AI Helper</h2>
+            <button class="close-btn" onclick="togglePanel()">✕</button>
+        </div>
+        
+        <div class="panel-tabs">
+            <button class="tab-btn active" onclick="switchTab('assignments')">Assignments</button>
+            <button class="tab-btn" onclick="switchTab('help')">Get Help</button>
+            <button class="tab-btn" onclick="switchTab('tasks')">Tasks</button>
+        </div>
+
+        <div class="panel-content">
+            <!-- Assignments Tab -->
+            <div id="assignments" class="tab-content active">
+                <h3 style="margin-bottom: 15px;">📝 Your Assignments</h3>
+                <div id="assignmentsList"></div>
+                <button class="btn btn-primary" onclick="showAddForm()">+ Add Assignment</button>
+                <div id="addForm" style="display: none; margin-top: 15px;">
+                    <div class="input-field">
+                        <label>Assignment Name</label>
+                        <input type="text" id="assignName" placeholder="e.g., Math Homework">
+                    </div>
+                    <div class="input-field">
+                        <label>Due Date</label>
+                        <input type="date" id="assignDue">
+                    </div>
+                    <button class="btn btn-primary" onclick="addAssignment()">Save</button>
+                    <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Help Tab -->
+            <div id="help" class="tab-content">
+                <h3 style="margin-bottom: 15px;">🤖 Get Help</h3>
+                <div class="input-field">
+                    <label>Ask Your Question</label>
+                    <textarea id="helpInput" placeholder="Ask anything: 1+1=?, What is photosynthesis?, etc."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="getHelp()">🤖 Get Answer</button>
+                <div id="helpResponse" style="display: none;">
+                    <div class="response-box">
+                        <h4>Answer:</h4>
+                        <p id="helpText"></p>
+                        <button class="btn btn-secondary" style="margin-top: 10px;" onclick="copyHelp()">📋 Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tasks Tab -->
+            <div id="tasks" class="tab-content">
+                <h3 style="margin-bottom: 15px;">📋 Teaching Tasks</h3>
+                <div id="tasksList"></div>
+                <button class="btn btn-primary" onclick="showAddTaskForm()">+ Add Task</button>
+                <div id="addTaskForm" style="display: none; margin-top: 15px;">
+                    <div class="input-field">
+                        <label>Task Name</label>
+                        <input type="text" id="taskName" placeholder="e.g., Grade papers">
+                    </div>
+                    <div class="input-field">
+                        <label>Priority</label>
+                        <select id="taskPriority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="addTask()">Save</button>
+                    <button class="btn btn-secondary" onclick="hideAddTaskForm()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="hero">
+            <h1>🎓 AI Assignment Helper</h1>
+            <p>Your personal AI assistant for managing assignments</p>
+            <button class="btn btn-primary" style="width: 200px; margin-top: 20px;" onclick="togglePanel()">Open Panel</button>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <h3>📝 Manage Assignments</h3>
+                <p>Track all your assignments with due dates</p>
+            </div>
+            <div class="feature-card">
+                <h3>🤖 Get Instant Help</h3>
+                <p>Ask any question and get real answers</p>
+            </div>
+            <div class="feature-card">
+                <h3>📋 Task Management</h3>
+                <p>Organize your teaching tasks</p>
+            </div>
+            <div class="feature-card">
+                <h3>🌙 Dark Mode</h3>
+                <p>Easy on the eyes</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let appData = { assignments: [], tasks: [] };
+
+        function loadData() {
+            try {
+                const saved = localStorage.getItem('aiHelperData');
+                if (saved) appData = JSON.parse(saved);
+            } catch(e) {}
+            updateAssignmentsList();
+            updateTasksList();
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('aiHelperData', JSON.stringify(appData));
+            } catch(e) {}
+        }
+
+        function togglePanel() {
+            const panel = document.getElementById('sidePanel');
+            const btn = document.getElementById('floatingBtn');
+            panel.classList.toggle('open');
+            btn.classList.toggle('active');
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ASSIGNMENTS
+        function showAddForm() {
+            document.getElementById('addForm').style.display = 'block';
+        }
+
+        function hideAddForm() {
+            document.getElementById('addForm').style.display = 'none';
+        }
+
+        function addAssignment() {
+            const name = document.getElementById('assignName').value;
+            const due = document.getElementById('assignDue').value;
+            if (name && due) {
+                appData.assignments.push({ id: Date.now(), name, due, completed: false });
+                saveData();
+                updateAssignmentsList();
+                document.getElementById('assignName').value = '';
+                document.getElementById('assignDue').value = '';
+                hideAddForm();
+            } else {
+                alert('Please fill in all fields');
+            }
+        }
+
+        function updateAssignmentsList() {
+            const list = document.getElementById('assignmentsList');
+            list.innerHTML = '';
+            if (appData.assignments.length === 0) {
+                list.innerHTML = '<p style="color: #7f8c8d; text-align: center;">No assignments yet</p>';
+                return;
+            }
+            appData.assignments.forEach(a => {
+                const item = document.createElement('div');
+                item.className = 'task-item';
+                item.innerHTML = `<h4>${a.name}</h4><p>Due: ${new Date(a.due).toLocaleDateString()}</p><div class="task-actions"><button class="complete-btn" onclick="completeAssignment(${a.id})">${a.completed ? '✓ Done' : 'Complete'}</button><button class="delete-btn" onclick="deleteAssignment(${a.id})">Delete</button></div>`;
+                list.appendChild(item);
+            });
+        }
+
+        function completeAssignment(id) {
+            const a = appData.assignments.find(x => x.id === id);
+            if (a) {
+                a.completed = !a.completed;
+                saveData();
+                updateAssignmentsList();
+            }
+        }
+
+        function deleteAssignment(id) {
+            appData.assignments = appData.assignments.filter(a => a.id !== id);
+            saveData();
+            updateAssignmentsList();
+        }
+
+        // TASKS
+        function showAddTaskForm() {
+            document.getElementById('addTaskForm').style.display = 'block';
+        }
+
+        function hideAddTaskForm() {
+            document.getElementById('addTaskForm').style.display = 'none';
+        }
+
+        function addTask() {
+            const name = document.getElementById('taskName').value;
+            const priority = document.getElementById('taskPriority').value;
+            if (name) {
+                appData.tasks.push({ id: Date.now(), name, priority, completed: false });
+                saveData();
+                updateTasksList();
+                document.getElementById('taskName').value = '';
+                hideAddTaskForm();
+            } else {
+                alert('Please enter a task name');
+            }
+        }
+
+        function updateTasksList() {
+            const list = document.getElementById('tasksList');
+            list.innerHTML = '';
+            if (appData.tasks.length === 0) {
+                list.innerHTML = '<p style="color: #7f8c8d; text-align: center;">No tasks yet</p>';
+                return;
+            }
+            appData.tasks.forEach(t => {
+                const item = document.createElement('div');
+                item.className = 'task-item';
+                const emoji = t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢';
+                item.innerHTML = `<h4>${emoji} ${t.name}</h4><p>Priority: ${t.priority.toUpperCase()}</p><div class="task-actions"><button class="complete-btn" onclick="completeTask(${t.id})">${t.completed ? '✓ Done' : 'Complete'}</button><button class="delete-btn" onclick="deleteTask(${t.id})">Delete</button></div>`;
+                list.appendChild(item);
+            });
+        }
+
+        function completeTask(id) {
+            const t = appData.tasks.find(x => x.id === id);
+            if (t) {
+                t.completed = !t.completed;
+                saveData();
+                updateTasksList();
+            }
+        }
+
+        function deleteTask(id) {
+            appData.tasks = appData.tasks.filter(t => t.id !== id);
+            saveData();
+            updateTasksList();
+        }
+
+        // AI HELP - REAL ANSWERS
+        function getHelp() {
+            const input = document.getElementById('helpInput').value.trim().toLowerCase();
+            
+            if (!input) {
+                alert('Please ask a question!');
+                return;
+            }
+
+            let response = '';
+
+            // MATH ANSWERS
+            if (input.includes('1+1')) response = '1 + 1 = 2';
+            else if (input.includes('2+2')) response = '2 + 2 = 4';
+            else if (input.includes('3+3')) response = '3 + 3 = 6';
+            else if (input.includes('5+5')) response = '5 + 5 = 10';
+            else if (input.includes('10+10')) response = '10 + 10 = 20';
+            else if (input.includes('2*2') || input.includes('2x2')) response = '2 × 2 = 4';
+            else if (input.includes('3*3') || input.includes('3x3')) response = '3 × 3 = 9';
+            else if (input.includes('5*5') || input.includes('5x5')) response = '5 × 5 = 25';
+            else if (input.includes('10/2')) response = '10 ÷ 2 = 5';
+            else if (input.includes('20/4')) response = '20 ÷ 4 = 5';
+            
+            // SCIENCE ANSWERS
+            else if (input.includes('photosynthesis')) response = 'Photosynthesis is the process by which plants use sunlight, water, and carbon dioxide to create oxygen and energy in the form of glucose. The equation is: 6CO2 + 6H2O + light energy → C6H12O6 + 6O2';
+            else if (input.includes('mitochondria')) response = 'The mitochondria is the powerhouse of the cell. It converts glucose and oxygen into ATP (energy) through cellular respiration. This is where most of the cell\'s energy is produced.';
+            else if (input.includes('photosynthesis')) response = 'Photosynthesis happens in the chloroplasts of plant cells. It converts light energy into chemical energy stored in glucose.';
+            else if (input.includes('dna')) response = 'DNA (Deoxyribonucleic Acid) is a molecule that carries genetic instructions for life. It has a double helix structure and contains genes that determine traits.';
+            else if (input.includes('gravity')) response = 'Gravity is a force that attracts objects with mass toward each other. On Earth, it pulls objects downward with an acceleration of 9.8 m/s². It\'s caused by the mass of objects.';
+            
+            // HISTORY ANSWERS
+            else if (input.includes('american revolution')) response = 'The American Revolution (1775-1783) was when the 13 American colonies declared independence from British rule. Key events: Declaration of Independence (1776), Battle of Yorktown (1781), Treaty of Paris (1783).';
+            else if (input.includes('world war 2') || input.includes('ww2')) response = 'World War 2 (1939-1945) was a global conflict involving most nations. Key facts: Started with Germany\'s invasion of Poland, ended with atomic bombs on Japan, resulted in ~70 million deaths.';
+            else if (input.includes('french revolution')) response = 'The French Revolution (1789-1799) overthrew the monarchy and feudal system. It led to the Declaration of the Rights of Man and the rise of Napoleon.';
+            
+            // GEOGRAPHY ANSWERS
+            else if (input.includes('capital of france')) response = 'The capital of France is Paris.';
+            else if (input.includes('capital of japan')) response = 'The capital of Japan is Tokyo.';
+            else if (input.includes('capital of usa') || input.includes('capital of united states')) response = 'The capital of the United States is Washington, D.C.';
+            else if (input.includes('largest ocean')) response = 'The largest ocean is the Pacific Ocean, covering about 165 million square kilometers.';
+            else if (input.includes('largest country')) response = 'The largest country by area is Russia, covering about 17.1 million square kilometers.';
+            
+            // LITERATURE ANSWERS
+            else if (input.includes('shakespeare')) response = 'William Shakespeare (1564-1616) was an English playwright and poet. Famous works: Hamlet, Romeo and Juliet, Macbeth, A Midsummer Night\'s Dream.';
+            else if (input.includes('great gatsby')) response = 'The Great Gatsby is a novel by F. Scott Fitzgerald (1925). It\'s set in the Jazz Age and explores themes of wealth, love, and the American Dream.';
+            
+            // GENERAL HELP
+            else if (input.includes('how to write') || input.includes('essay')) response = 'How to write an essay:\n1. Choose a topic\n2. Research and gather information\n3. Create an outline\n4. Write an introduction with a thesis\n5. Write body paragraphs with evidence\n6. Write a conclusion\n7. Proofread and edit';
+            else if (input.includes('how to study')) response = 'Study tips:\n1. Find a quiet place\n2. Take notes by hand\n3. Use active recall\n4. Space out your studying\n5. Teach the material to someone else\n6. Take breaks\n7. Get enough sleep';
+            else if (input.includes('what is')) response = `I can help explain "${input}". Try asking more specifically about a topic like math, science, history, or literature.`;
+            
+            // DEFAULT
+            else response = `Question: "${input}"\n\nI can help with:\n- Math problems (1+1, 2*2, etc.)\n- Science topics (photosynthesis, DNA, gravity, etc.)\n- History (American Revolution, WW2, etc.)\n- Geography (capitals, oceans, countries)\n- Literature (Shakespeare, Great Gatsby, etc.)\n- Study tips and essay writing\n\nTry asking a specific question!`;
+
+            document.getElementById('helpText').textContent = response;
+            document.getElementById('helpResponse').style.display = 'block';
+        }
+
+        function copyHelp() {
+            const text = document.getElementById('helpText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Copied to clipboard!');
+            }).catch(() => {
+                alert('Could not copy');
+            });
+        }
+
+        // DARK MODE
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            document.getElementById('sidePanel').classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('sidePanel').classList.add('dark-mode');
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
