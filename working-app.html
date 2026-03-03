@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assignment Helper</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .floating-btn { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #667eea; border: none; border-radius: 50%; cursor: pointer; font-size: 28px; z-index: 999; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); }
+        .floating-btn:hover { transform: scale(1.1); }
+        .floating-btn.active { background: #e74c3c; }
+        .side-panel { position: fixed; right: -400px; top: 0; width: 400px; height: 100vh; background: white; box-shadow: -5px 0 30px rgba(0, 0, 0, 0.2); transition: right 0.3s; z-index: 1000; display: flex; flex-direction: column; overflow: hidden; }
+        .side-panel.open { right: 0; }
+        .side-panel.dark-mode { background: #2c2c2c; color: #ecf0f1; }
+        .panel-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .close-btn { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; transition: all 0.3s; }
+        .close-btn:hover { background: rgba(255,255,255,0.4); }
+        .panel-content { flex: 1; overflow-y: auto; padding: 20px; }
+        .btn { width: 100%; padding: 10px; margin: 10px 0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-secondary { background: #ecf0f1; color: #2c3e50; }
+        .btn-secondary:hover { background: #bdc3c7; }
+        .main { max-width: 1200px; margin: 0 auto; padding: 40px 20px; text-align: center; color: white; }
+        .hero h1 { font-size: 48px; margin-bottom: 20px; }
+        .hero p { font-size: 18px; margin-bottom: 30px; }
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-top: 50px; }
+        .feature-card { background: white; padding: 30px; border-radius: 12px; color: #2c3e50; }
+        .feature-card h3 { color: #667eea; margin-bottom: 15px; }
+        .input-field { margin: 15px 0; text-align: left; }
+        .input-field label { display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50; }
+        .side-panel.dark-mode .input-field label { color: #ecf0f1; }
+        .input-field input, .input-field textarea, .input-field select { width: 100%; padding: 10px; border: 2px solid #ecf0f1; border-radius: 6px; font-family: inherit; font-size: 14px; }
+        .side-panel.dark-mode .input-field input, .side-panel.dark-mode .input-field textarea, .side-panel.dark-mode .input-field select { background: #3c3c3c; color: #ecf0f1; border-color: #555; }
+        .task-item { background: #f0f0f0; padding: 12px; margin: 10px 0; border-radius: 6px; border-left: 4px solid #667eea; text-align: left; }
+        .side-panel.dark-mode .task-item { background: #3c3c3c; color: #ecf0f1; }
+        .task-item h4 { margin-bottom: 5px; }
+        .task-item p { font-size: 12px; opacity: 0.7; margin-bottom: 8px; }
+        .task-actions { display: flex; gap: 5px; }
+        .task-actions button { flex: 1; padding: 6px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; }
+        .complete-btn { background: #27ae60; color: white; }
+        .delete-btn { background: #e74c3c; color: white; }
+        .mode-toggle { position: fixed; top: 20px; right: 20px; background: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; z-index: 998; font-weight: 600; }
+        body.dark-mode { background: #1a1a1a; }
+        body.dark-mode .mode-toggle { background: #2c2c2c; color: #ecf0f1; }
+        body.dark-mode .feature-card { background: #2c2c2c; color: #ecf0f1; }
+        @media (max-width: 768px) { .side-panel { width: 100%; right: -100%; } .hero h1 { font-size: 32px; } }
+    </style>
+</head>
+<body>
+    <button class="mode-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+    <button class="floating-btn" id="floatingBtn" onclick="togglePanel()">💬</button>
+
+    <div class="side-panel" id="sidePanel">
+        <div class="panel-header">
+            <h2>📚 AI Helper</h2>
+            <button class="close-btn" onclick="togglePanel()">✕</button>
+        </div>
+        <div class="panel-content">
+            <h3 style="margin-bottom: 15px;">📝 Your Assignments</h3>
+            <div id="assignmentsList"></div>
+            <button class="btn btn-primary" onclick="showAddForm()">+ Add Assignment</button>
+            <div id="addForm" style="display: none; margin-top: 15px;">
+                <div class="input-field">
+                    <label>Assignment Name</label>
+                    <input type="text" id="assignName" placeholder="e.g., Math Homework">
+                </div>
+                <div class="input-field">
+                    <label>Due Date</label>
+                    <input type="date" id="assignDue">
+                </div>
+                <button class="btn btn-primary" onclick="addAssignment()">Save</button>
+                <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="hero">
+            <h1>🎓 AI Assignment Helper</h1>
+            <p>Your personal AI assistant for managing assignments</p>
+            <button class="btn btn-primary" style="width: 200px; margin-top: 20px;" onclick="togglePanel()">Open Panel</button>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <h3>📝 Manage Assignments</h3>
+                <p>Track all your assignments with due dates</p>
+            </div>
+            <div class="feature-card">
+                <h3>🤖 Get Instant Help</h3>
+                <p>Paste questions and get guidance</p>
+            </div>
+            <div class="feature-card">
+                <h3>📋 Task Management</h3>
+                <p>Organize your teaching tasks</p>
+            </div>
+            <div class="feature-card">
+                <h3>🌙 Dark Mode</h3>
+                <p>Easy on the eyes</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let appData = { assignments: [] };
+
+        function loadData() {
+            try {
+                const saved = localStorage.getItem('aiHelperData');
+                if (saved) appData = JSON.parse(saved);
+            } catch(e) {}
+            updateList();
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('aiHelperData', JSON.stringify(appData));
+            } catch(e) {}
+        }
+
+        function togglePanel() {
+            const panel = document.getElementById('sidePanel');
+            const btn = document.getElementById('floatingBtn');
+            panel.classList.toggle('open');
+            btn.classList.toggle('active');
+        }
+
+        function showAddForm() {
+            document.getElementById('addForm').style.display = 'block';
+        }
+
+        function hideAddForm() {
+            document.getElementById('addForm').style.display = 'none';
+        }
+
+        function addAssignment() {
+            const name = document.getElementById('assignName').value;
+            const due = document.getElementById('assignDue').value;
+            if (name && due) {
+                appData.assignments.push({ id: Date.now(), name, due, completed: false });
+                saveData();
+                updateList();
+                document.getElementById('assignName').value = '';
+                document.getElementById('assignDue').value = '';
+                hideAddForm();
+            } else {
+                alert('Please fill in all fields');
+            }
+        }
+
+        function updateList() {
+            const list = document.getElementById('assignmentsList');
+            list.innerHTML = '';
+            if (appData.assignments.length === 0) {
+                list.innerHTML = '<p style="color: #7f8c8d; text-align: center;">No assignments yet</p>';
+                return;
+            }
+            appData.assignments.forEach(a => {
+                const item = document.createElement('div');
+                item.className = 'task-item';
+                item.innerHTML = `<h4>${a.name}</h4><p>Due: ${new Date(a.due).toLocaleDateString()}</p><div class="task-actions"><button class="complete-btn" onclick="completeAssignment(${a.id})">${a.completed ? '✓ Done' : 'Complete'}</button><button class="delete-btn" onclick="deleteAssignment(${a.id})">Delete</button></div>`;
+                list.appendChild(item);
+            });
+        }
+
+        function completeAssignment(id) {
+            const a = appData.assignments.find(x => x.id === id);
+            if (a) {
+                a.completed = !a.completed;
+                saveData();
+                updateList();
+            }
+        }
+
+        function deleteAssignment(id) {
+            appData.assignments = appData.assignments.filter(a => a.id !== id);
+            saveData();
+            updateList();
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            document.getElementById('sidePanel').classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('sidePanel').classList.add('dark-mode');
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
