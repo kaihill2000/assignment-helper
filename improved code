@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assignment Helper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+        }
+        body.dark {
+            background: #1a1a1a;
+        }
+        .btn-float {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: #667eea;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 28px;
+            z-index: 999;
+        }
+        .panel {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            transition: right 0.3s;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .panel.open {
+            right: 0;
+        }
+        .panel.dark {
+            background: #2c2c2c;
+            color: white;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: #999;
+            white-space: nowrap;
+        }
+        .tab.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        .content {
+            padding: 20px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+        }
+        .panel.dark .input {
+            background: #3c3c3c;
+            color: white;
+            border-color: #555;
+        }
+        .btn {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-secondary {
+            background: #ddd;
+            color: black;
+        }
+        .item {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        .panel.dark .item {
+            background: #3c3c3c;
+        }
+        .item-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .item-actions button {
+            flex: 1;
+            padding: 5px;
+            font-size: 11px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .btn-done {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-del {
+            background: #e74c3c;
+            color: white;
+        }
+        .response {
+            background: #f0f7ff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            display: none;
+        }
+        .panel.dark .response {
+            background: #3c3c3c;
+        }
+        .mode-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 998;
+        }
+        .mode-btn.dark {
+            background: #2c2c2c;
+            color: white;
+        }
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+            color: white;
+        }
+        .hero h1 {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin: 50px 0;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            color: #2c3e50;
+        }
+        body.dark .card {
+            background: #2c2c2c;
+            color: white;
+        }
+        .stats {
+            background: #f0f0f0;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .panel.dark .stats {
+            background: #3c3c3c;
+        }
+        .stats h4 {
+            color: #667eea;
+            margin: 10px 0;
+        }
+        .stats p {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <button class="mode-btn" onclick="toggleDark()">🌙 Dark</button>
+    <button class="btn-float" onclick="togglePanel()" id="btn">💬</button>
+    
+    <div class="panel" id="panel">
+        <div class="header">
+            <h2>AI Helper</h2>
+            <button class="close" onclick="togglePanel()">✕</button>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="tab(0)">Dashboard</button>
+            <button class="tab" onclick="tab(1)">Assignments</button>
+            <button class="tab" onclick="tab(2)">Help</button>
+            <button class="tab" onclick="tab(3)">Chat</button>
+            <button class="tab" onclick="tab(4)">Tasks</button>
+            <button class="tab" onclick="tab(5)">Notes</button>
+        </div>
+        
+        <div class="content">
+            <!-- Dashboard -->
+            <div class="tab-content active" id="t0">
+                <h3>📊 Dashboard</h3>
+                <div class="stats">
+                    <h4>Assignments</h4>
+                    <p id="s0">0</p>
+                </div>
+                <div class="stats">
+                    <h4>Completed</h4>
+                    <p id="s1">0</p>
+                </div>
+                <div class="stats">
+                    <h4>Tasks</h4>
+                    <p id="s2">0</p>
+                </div>
+                <div class="stats">
+                    <h4>Chats</h4>
+                    <p id="s3">0</p>
+                </div>
+                <button class="btn btn-primary" onclick="exportData()">📥 Export</button>
+                <button class="btn btn-secondary" onclick="clearAll()">🗑️ Clear</button>
+            </div>
+            
+            <!-- Assignments -->
+            <div class="tab-content" id="t1">
+                <h3>📝 Assignments</h3>
+                <input type="text" class="input" id="search1" placeholder="Search..." onkeyup="filter1()">
+                <div id="list1"></div>
+                <button class="btn btn-primary" onclick="showForm1()">+ Add</button>
+                <div id="form1" style="display:none;margin-top:15px">
+                    <input type="text" class="input" id="in1" placeholder="Name">
+                    <input type="date" class="input" id="in2">
+                    <select class="input" id="in3">
+                        <option>Low</option>
+                        <option selected>Medium</option>
+                        <option>High</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="add1()">Save</button>
+                    <button class="btn btn-secondary" onclick="hideForm1()">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Help -->
+            <div class="tab-content" id="t2">
+                <h3>🤖 Get Help</h3>
+                <textarea class="input" id="q" placeholder="Ask..." style="height:100px"></textarea>
+                <button class="btn btn-primary" onclick="getHelp()">Get Answer</button>
+                <div id="resp" class="response">
+                    <h4>Answer:</h4>
+                    <p id="ans"></p>
+                    <button class="btn btn-secondary" onclick="copy()" style="margin-top:10px">📋 Copy</button>
+                </div>
+            </div>
+            
+            <!-- Chat History -->
+            <div class="tab-content" id="t3">
+                <h3>💬 Chat History</h3>
+                <input type="text" class="input" id="search3" placeholder="Search..." onkeyup="filter3()">
+                <div id="list3"></div>
+                <button class="btn btn-secondary" onclick="clearChat()">Clear</button>
+            </div>
+            
+            <!-- Tasks -->
+            <div class="tab-content" id="t4">
+                <h3>📋 Tasks</h3>
+                <input type="text" class="input" id="search4" placeholder="Search..." onkeyup="filter4()">
+                <div id="list4"></div>
+                <button class="btn btn-primary" onclick="showForm4()">+ Add</button>
+                <div id="form4" style="display:none;margin-top:15px">
+                    <input type="text" class="input" id="in4" placeholder="Task">
+                    <select class="input" id="in5">
+                        <option>Low</option>
+                        <option selected>Medium</option>
+                        <option>High</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="add4()">Save</button>
+                    <button class="btn btn-secondary" onclick="hideForm4()">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Notes -->
+            <div class="tab-content" id="t5">
+                <h3>📝 Notes</h3>
+                <div id="list5"></div>
+                <button class="btn btn-primary" onclick="showForm5()">+ Add</button>
+                <div id="form5" style="display:none;margin-top:15px">
+                    <input type="text" class="input" id="in6" placeholder="Title">
+                    <textarea class="input" id="in7" placeholder="Content"></textarea>
+                    <button class="btn btn-primary" onclick="add5()">Save</button>
+                    <button class="btn btn-secondary" onclick="hideForm5()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main">
+        <div class="hero">
+            <h1>🎓 AI Assignment Helper</h1>
+            <p>Your complete AI assistant</p>
+            <button class="btn btn-primary" style="width:200px;margin-top:20px" onclick="togglePanel()">Open Panel</button>
+        </div>
+        <div class="features">
+            <div class="card"><h3>📊 Dashboard</h3><p>Track progress</p></div>
+            <div class="card"><h3>📝 Assignments</h3><p>Manage work</p></div>
+            <div class="card"><h3>🤖 AI Help</h3><p>Get answers</p></div>
+            <div class="card"><h3>💬 Chat</h3><p>View history</p></div>
+            <div class="card"><h3>📋 Tasks</h3><p>Organize</p></div>
+            <div class="card"><h3>📝 Notes</h3><p>Save ideas</p></div>
+        </div>
+    </div>
+    
+    <script>
+        let d = { a: [], t: [], n: [], c: [] };
+        
+        function load() {
+            try {
+                d = JSON.parse(localStorage.getItem('d')) || d;
+            } catch (e) {}
+            update();
+        }
+        
+        function save() {
+            localStorage.setItem('d', JSON.stringify(d));
+        }
+        
+        function togglePanel() {
+            document.getElementById('panel').classList.toggle('open');
+            document.getElementById('btn').classList.toggle('active');
+        }
+        
+        function tab(i) {
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+            document.getElementById('t' + i).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function update() {
+            document.getElementById('s0').textContent = d.a.length;
+            document.getElementById('s1').textContent = d.a.filter(x => x.done).length;
+            document.getElementById('s2').textContent = d.t.length;
+            document.getElementById('s3').textContent = d.c.length;
+            updateList1();
+            updateList4();
+            updateList5();
+            updateList3();
+        }
+        
+        function showForm1() { document.getElementById('form1').style.display = 'block'; }
+        function hideForm1() { document.getElementById('form1').style.display = 'none'; }
+        
+        function add1() {
+            const n = document.getElementById('in1').value;
+            const d2 = document.getElementById('in2').value;
+            const p = document.getElementById('in3').value;
+            if (n && d2) {
+                d.a.push({ id: Date.now(), n, d2, p, done: false });
+                save();
+                update();
+                document.getElementById('in1').value = '';
+                document.getElementById('in2').value = '';
+                hideForm1();
+            } else alert('Fill all');
+        }
+        
+        function updateList1() {
+            const l = document.getElementById('list1');
+            l.innerHTML = '';
+            if (d.a.length === 0) {
+                l.innerHTML = '<p style="color:#999">No assignments</p>';
+                return;
+            }
+            d.a.forEach(x => {
+                const e = document.createElement('div');
+                e.className = 'item';
+                const em = x.p === 'High' ? '🔴' : x.p === 'Medium' ? '🟡' : '🟢';
+                e.innerHTML = `<h4>${em} ${x.n}</h4><p>Due: ${new Date(x.d2).toLocaleDateString()}</p><div class="item-actions"><button class="btn-done" onclick="done1(${x.id})">${x.done ? '✓' : 'Done'}</button><button class="btn-del" onclick="del1(${x.id})">Del</button></div>`;
+                l.appendChild(e);
+            });
+        }
+        
+        function filter1() {
+            const s = document.getElementById('search1').value.toLowerCase();
+            const l = document.getElementById('list1');
+            l.innerHTML = '';
+            const f = d.a.filter(x => x.n.toLowerCase().includes(s));
+            if (f.length === 0) {
+                l.innerHTML = '<p style="color:#999">No results</p>';
+                return;
+            }
+            f.forEach(x => {
+                const e = document.createElement('div');
+                e.className = 'item';
+                const em = x.p === 'High' ? '🔴' : x.p === 'Medium' ? '🟡' : '🟢';
+                e.innerHTML = `<h4>${em} ${x.n}</h4><p>Due: ${new Date(x.d2).toLocaleDateString()}</p><div class="item-actions"><button class="btn-done" onclick="done1(${x.id})">${x.done ? '✓' : 'Done'}</button><button class="btn-del" onclick="del1(${x.id})">Del</button></div>`;
+                l.appendChild(e);
+            });
+        }
+        
+        function done1(id) {
+            const x = d.a.find(y => y.id === id);
+            if (x) { x.done = !x.done; save(); update(); }
+        }
+        
+        function del1(id) {
+            d.a = d.a.filter(x => x.id !== id);
+            save();
+            update();
+        }
+        
+        function getHelp() {
+            const q = document.getElementById('q').value.toLowerCase();
+            if (!q) { alert('Ask!'); return; }
+            let a = '';
+            if (q.includes('1+1')) a = '1+1=2';
+            else if (q.includes('2+2')) a = '2+2=4';
+            else if (q.includes('photosynthesis')) a = 'Photosynthesis: Plants use sunlight, water, CO2 to make oxygen and glucose.';
+            else if (q.includes('dna')) a = 'DNA: Carries genetic info. Double helix structure.';
+            else if (q.includes('gravity')) a = 'Gravity: Force attracting objects. 9.8 m/s² on Earth.';
+            else if (q.includes('capital of france')) a = 'Paris';
+            else if (q.includes('capital of japan')) a = 'Tokyo';
+            else if (q.includes('capital of usa')) a = 'Washington D.C.';
+            else if (q.includes('world war')) a = 'WW2 (1939-1945): Global conflict. ~70 million deaths.';
+            else if (q.includes('shakespeare')) a = 'William Shakespeare (1564-1616): Famous playwright. Hamlet, Romeo & Juliet, Macbeth.';
+            else a = 'I can help with: Math, Science, History, Geography, Literature, Study tips. Ask specific questions!';
+            d.c.push({ id: Date.now(), q, a, date: new Date().toLocaleString() });
+            save();
+            document.getElementById('ans').textContent = a;
+            document.getElementById('resp').style.display = 'block';
+            update();
+        }
+        
+        function updateList3() {
+            const l = document.getElementById('list3');
+            l.innerHTML = '';
+            if (d.c.length === 0) {
+                l.innerHTML = '<p style="color:#999">No chat</p>';
+                return;
+            }
+            d.c.forEach(x => {
+                const e = document.createElement('div');
+                e.className = 'item';
+                e.innerHTML = `<strong>Q:</strong> ${x.q}<br><strong>A:</strong> ${x.a}<br><small>${x.date}</small>`;
+                l.appendChild(e);
+            });
+        }
+        
+        function filter3() {
+            const s = document.getElementById('search3').value.toLowerCase();
+            const l = document.getElementById('list3');
+            l.innerHTML = '';
+            const f = d.c.filter(x => x.q.toLowerCase().includes(s) || x.a.toLowerCase().includes(s));
+            if (f.length === 0) {
+                l.innerHTML = '<p style="color:#999">No results</p>';
+                return;
+            }
+            f.forEach(x => {
+                const e = document.createElement('div');
+                e.className = 'item';
+                e.innerHTML = `<strong>Q:</strong> ${x.q}<br><strong>A:</strong> ${x.a}<br><small>${x.date}</small>`;
+                l.appendChild(e);
+            });
+        }
+        
+        function clearChat() {
+            if (confirm('Clear chat?')) {
+                d.c = [];
+                save();
+                update();
+            }
+        }
+        
+        function copy() {
+            const t = document.getElementById('ans').textContent;
+            navigator.clipboard.writeText(t).then(() => alert('Copied!')).catch(() => alert('Error'));
+        }
+        
+        function showForm4() { document.getElementById('form4').style.display = 'block'; }
+        function hideForm4() { document.getElementById('form4').style.display = 'none'; }
+        
+        function add4() {
+            const n = document.getElementById('in4').value;
+            const p = document.getElementById('in5').value;
+            if (n) {
+                d.t.push({ id: Date.now(), n, p, done: false });
+                save();
+                update();
+                document.getElementById('in4').value = '';
+                hideForm4();
+            } else alert('Enter task');
+        }
+        
+        function updateList4() {
+            const l = document.getElementById('list4');
+            l.innerHTML = '';
+            if (d.t.length === 0) {
+                l.innerHTML = '<p style="color:#999">No tasks</p>';
+                return;
+            }
+            d.t.forEach(x => {
+                const e = document.createElement('div');
+                e.className = 'item';
+                const em = x.p === 'High' ? '🔴' : x.p === 'Medium' ? '🟡' : '🟢';
+                e.innerHTML = `<h4>${em} ${x.n}</h4><p>${x.p}</p><div class="item-actions"><button class="btn-done" onclick="done4(${x.id})">${x.done ? '✓' : 'Done'}</button><button class="btn-del" onclick="del4(${x.id})">Del</button></div>`;
+                l.appendChild(e);
+            });
+        }
+        
+        function filter4() {
+            const s = document.getElementById('search4').value.toLowerCase();
+            const l = document.getElementById('list4');
+            l.innerHTML = '';
+            const f = d.t.filter(x => x.n.toLowerCase().includes(s));
+            if (f.length === 0) {
+                l.innerHTML = '<p style="color:#999">No results</p>';
+                return;
+            }
+            f.forEach(x => {
+                const e = document.createElement('div');
+                e.className = 'item';
+                const em = x.p === 'High' ? '🔴' : x.p === 'Medium' ? '🟡' : '🟢';
+                e.innerHTML = `<h4>${em} ${x.n}</h4><p>${x.p}</p><div class="item-actions"><button class="btn-done" onclick="done4(${x.id})">${x.done ? '✓' : 'Done'}</button><button class="btn-del" onclick="del4(${x.id})">Del</button></div>`;
+                l.appendChild(e);
+            });
+        }
+        
+        function done4(id) {
+            const x = d.t.find(y => y.id === id);
+            if (x) { x.done = !x.done; save(); update(); }
+        }
+        
+        function del4(id) {
+            d.t = d.t.filter(x => x.id !== id);
+            save();
+            update();
+        }
+        
+        function showForm5() { document.getElementById('form5').style.display = 'block'; }
+        function hideForm5() { document.getElementById('form5').style.display = 'none'; }
+        
+        function add5() {
+            const t = document.getElementById('in6').value;
+            const c = document.getElementById('in7').value;
+            if (t && c) {
+                d.n.push({ id: Date.now(), t, c, date: new Date().toLocaleDateString() });
+                save();
+                update();
+                document.getElementById('in6').value = '';
+                document.getElementById('in7').value = '';
+                hideForm5();
+            } else alert('Fill all');
+        }
+        
+        function updateList5() {
+            const l = document.getElementById('list5');
+            l.innerHTML = '';
+            if (d.n.length === 0) {
+                l.innerHTML = '<p style="color:#999">No notes</p>';
+                return;
+            }
+            d.n.forEach(x => {
+                const e = document.createElement('div');
+                e.className = 'item';
+                e.innerHTML = `<h4>${x.t}</h4><p>${x.c}</p><small>${x.date}</small><button class="btn-del" style="width:100%;margin-top:8px" onclick="del5(${x.id})">Delete</button>`;
+                l.appendChild(e);
+            });
+        }
+        
+        function del5(id) {
+            d.n = d.n.filter(x => x.id !== id);
+            save();
+            update();
+        }
+        
+        function exportData() {
+            const j = JSON.stringify(d, null, 2);
+            const e = document.createElement('a');
+            e.setAttribute('href', 'data:text/json;charset=utf-8,' + encodeURIComponent(j));
+            e.setAttribute('download', 'data.json');
+            e.style.display = 'none';
+            document.body.appendChild(e);
+            e.click();
+            document.body.removeChild(e);
+            alert('Exported!');
+        }
+        
+        function clearAll() {
+            if (confirm('Clear ALL?')) {
+                d = { a: [], t: [], n: [], c: [] };
+                localStorage.clear();
+                update();
+                alert('Cleared!');
+            }
+        }
+        
+        function toggleDark() {
+            document.body.classList.toggle('dark');
+            document.getElementById('panel').classList.toggle('dark');
+            localStorage.setItem('dark', document.body.classList.contains('dark'));
+        }
+        
+        if (localStorage.getItem('dark')) {
+            document.body.classList.add('dark');
+            document.getElementById('panel').classList.add('dark');
+        }
+        
+        load();
+    </script>
+</body>
+</html>
